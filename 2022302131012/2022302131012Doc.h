@@ -29,8 +29,13 @@ public:
 	void Bezier_3(CClientDC* DCPoint, int mode, CPoint p1, CPoint p2, CPoint p3);
 	void Bsample(CClientDC* DCPoint, int mode);
 	void Hermite(CClientDC* DCPoint, int mode);
-
-
+	void GenerateGraph(CClientDC* DCPoint);
+	void DrawGraph(CClientDC* DCPoint);
+	void Symmetry(CPoint p1, CPoint p2);
+	void rotatePoint(CPoint center, CPoint& point, double angle);
+	void GenerateGraph2(CClientDC* DCPoint);
+	void SeedFill(CClientDC* pDC, CPoint seedpoint);
+	void EdgeFill(CClientDC* pDC);
 // 重写
 public:
 	virtual BOOL OnNewDocument();

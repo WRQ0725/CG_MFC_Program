@@ -11,7 +11,7 @@
 #endif
 
 #include "2022302131012Doc.h"
-
+#include <stack>
 #include <propkey.h>
 
 #ifdef _DEBUG
@@ -319,7 +319,7 @@ void CMy2022302131012Doc::Bezier_4(CClientDC* DCPoint, int mode, CPoint p1, CPoi
 		DCPoint->SetROP2(R2_NOT);
 		pen.CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 	}
-	else//mode=0时，画红色的正式曲线
+	else//mode=0时，画自己颜色的正式曲线
 	{
 		DCPoint->SetROP2(R2_COPYPEN);
 		pen.CreatePen(PS_SOLID, 1, m_crColor);
@@ -478,6 +478,226 @@ void CMy2022302131012Doc::Hermite(CClientDC* DCPoint, int mode)
 	DCPoint->SelectObject(pOldPen);
 	pen.DeleteObject();
 }
+
+void CMy2022302131012Doc::GenerateGraph(CClientDC* DCPoint)
+{
+	group[0].x = 100; group[0].y = 100;//图形数据准备
+	group[1].x=200;group[1].y=100;
+	group[2].x = 200; group[2].y = 200;
+	group[3].x = 100; group[3].y = 200;
+	group[4].x = 100; group[4].y = 100;
+	PointNum = 5;
+	DrawGraph(DCPoint);//画图形
+}
+
+void CMy2022302131012Doc::DrawGraph(CClientDC* DCPoint)
+{
+	int i;
+	CPen pen, * pOldPen;
+	DCPoint->SetROP2(R2_COPYPEN);
+	pen.CreatePen(PS_SOLID, 1, m_crColor); 
+	pOldPen = DCPoint->SelectObject(&pen);
+	DCPoint->MoveTo(group[0]);
+	for (i = 1; i < PointNum; i++)
+		DCPoint->LineTo(group[i]);
+	DCPoint->SelectObject(pOldPen);
+}
+
+void CMy2022302131012Doc::Symmetry(CPoint p1, CPoint p2)
+{
+	float a[3][3], b[3][3], c[3][3] = { NULL };
+	float sa, ca, x, y;
+	int i;
+	ca = (p2.x - p1.x) / sqrt(((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y)) * 1.0);//cosα 
+	sa = (p2.y - p1.y) / sqrt(((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y)) * 1.0);//sinα
+
+	c[0][0] = 1; c[0][1] = 0; c[0][2] = -p1.x;//矩阵1
+	c[1][0] = 0; c[1][1] = 1; c[1][2] = -p1.y;
+	c[2][0] = 0; c[2][1] = 0; c[2][2] = 1;
+
+	b[0][0] = ca; b[0][1] = sa; b[0][2] = 0;//矩阵2 
+	b[1][0] = -sa; b[1][1] = ca; b[1][2] = 0;
+	b[2][0] = 0; b[2][1] = 0; b[2][2] = 1;
+
+	a[0][0] = b[0][0] * c[0][0] + b[0][1] * c[1][0] + b[0][2] * c[2][0];//矩阵1、2合并
+	a[0][1] = b[0][0] * c[0][1] + b[0][1] * c[1][1] + b[0][2] * c[2][1];
+	a[0][2] = b[0][0] * c[0][2] + b[0][1] * c[1][2] + b[0][2] * c[2][2];
+	a[1][0] = b[1][0] * c[0][0] + b[1][1] * c[1][0] + b[1][2] * c[2][0];
+	a[1][1] = b[1][0] * c[0][1] + b[1][1] * c[1][1] + b[1][2] * c[2][1];
+	a[1][2] = b[1][0] * c[0][2] + b[1][1] * c[1][2] + b[1][2] * c[2][2];
+	a[2][0] = b[2][0] * c[0][0] + b[2][1] * c[1][0] + b[2][2] * c[2][0];
+	a[2][1] = b[2][0] * c[0][1] + b[2][1] * c[1][1] + b[2][2] * c[2][1];
+	a[2][2] = b[2][0] * c[0][2] + b[2][1] * c[1][2] + b[2][2] * c[2][2];
+
+	b[0][0] = 1; b[0][1] = 0; b[0][2] = 0;//矩阵3 
+	b[1][0] = 0; b[1][1] = -1; b[1][2] = 0;
+	b[2][0] = 0; b[2][1] = 0; b[2][2] = 1;
+
+	c[0][0] = b[0][0] * a[0][0] + b[0][1] * a[1][0] + b[0][2] * a[2][0];//矩阵1、2、3 合并
+	c[0][1] = b[0][0] * a[0][1] + b[0][1] * a[1][1] + b[0][2] * a[2][1];
+	c[0][2] = b[0][0] * a[0][2] + b[0][1] * a[1][2] + b[0][2] * a[2][2];
+	c[1][0] = b[1][0] * a[0][0] + b[1][1] * a[1][0] + b[1][2] * a[2][0];
+	c[1][1] = b[1][0] * a[0][1] + b[1][1] * a[1][1] + b[1][2] * a[2][1];
+	c[1][2] = b[1][0] * a[0][2] + b[1][1] * a[1][2] + b[1][2] * a[2][2];
+	c[2][0] = b[2][0] * a[0][0] + b[2][1] * a[1][0] + b[2][2] * a[2][0];
+	c[2][1] = b[2][0] * a[0][1] + b[2][1] * a[1][1] + b[2][2] * a[2][1];
+	c[2][2] = b[2][0] * a[0][2] + b[2][1] * a[1][2] + b[2][2] * a[2][2];
+
+	b[0][0] = ca; b[0][1] = -sa; b[0][2] = 0;//矩阵4 
+	b[1][0] = sa; b[1][1] = ca; b[1][2] = 0;
+	b[2][0] = 0; b[2][1] = 0; b[2][2] = 1;
+
+	a[0][0] = b[0][0] * c[0][0] + b[0][1] * c[1][0] + b[0][2] * c[2][0];//矩阵1、2、3、4合并
+	a[0][1] = b[0][0] * c[0][1] + b[0][1] * c[1][1] + b[0][2] * c[2][1];
+	a[0][2] = b[0][0] * c[0][2] + b[0][1] * c[1][2] + b[0][2] * c[2][2];
+	a[1][0] = b[1][0] * c[0][0] + b[1][1] * c[1][0] + b[1][2] * c[2][0];
+	a[1][1] = b[1][0] * c[0][1] + b[1][1] * c[1][1] + b[1][2] * c[2][1];
+	a[1][2] = b[1][0] * c[0][2] + b[1][1] * c[1][2] + b[1][2] * c[2][2];
+	a[2][0] = b[2][0] * c[0][0] + b[2][1] * c[1][0] + b[2][2] * c[2][0];
+	a[2][1] = b[2][0] * c[0][1] + b[2][1] * c[1][1] + b[2][2] * c[2][1];
+	a[2][2] = b[2][0] * c[0][2] + b[2][1] * c[1][2] + b[2][2] * c[2][2];
+
+	b[0][0] = 1; b[0][1] = 0; b[0][2] = p1.x;//矩阵5 
+	b[1][0] = 0; b[1][1] = 1; b[1][2] = p1.y;
+	b[2][0] = 0; b[2][1] = 0; b[2][2] = 1;
+
+	c[0][0] = b[0][0] * a[0][0] + b[0][1] * a[1][0] + b[0][2] * a[2][0];//所有矩阵合并
+	c[0][1] = b[0][0] * a[0][1] + b[0][1] * a[1][1] + b[0][2] * a[2][1];
+	c[0][2] = b[0][0] * a[0][2] + b[0][1] * a[1][2] + b[0][2] * a[2][2];
+	c[1][0] = b[1][0] * a[0][0] + b[1][1] * a[1][0] + b[1][2] * a[2][0];
+	c[1][1] = b[1][0] * a[0][1] + b[1][1] * a[1][1] + b[1][2] * a[2][1];
+	c[1][2] = b[1][0] * a[0][2] + b[1][1] * a[1][2] + b[1][2] * a[2][2];
+	c[2][0] = b[2][0] * a[0][0] + b[2][1] * a[1][0] + b[2][2] * a[2][0];
+	c[2][1] = b[2][0] * a[0][1] + b[2][1] * a[1][1] + b[2][2] * a[2][1];
+	c[2][2] = b[2][0] * a[0][2] + b[2][1] * a[1][2] + b[2][2] * a[2][2];
+
+	for (i = 0; i < PointNum; i++) {//利用复合矩阵对所有图形点坐标进行变换
+		x = c[0][0] * group[i].x + c[0][1] * group[i].y + c[0][2];
+		y = c[1][0] * group[i].x + c[1][1] * group[i].y + c[1][2];
+		group[i].x = x;
+		group[i].y = y;
+	}
+}
+
+void CMy2022302131012Doc::rotatePoint(CPoint center, CPoint& point, double angle)
+{
+	double rad = angle;
+	double dx = point.x - center.x;
+	double dy = point.y - center.y;
+
+	double cosTheta = cos(rad);
+	double sinTheta = sin(rad);
+
+	// 应用旋转公式
+	double rotatedX = dx * cosTheta - dy * sinTheta;
+	double rotatedY = dx * sinTheta + dy * cosTheta;
+
+	// 平移回原始位置
+	rotatedX += center.x;
+	rotatedY += center.y;
+
+	point.x = rotatedX;
+	point.y = rotatedY;
+}
+
+void CMy2022302131012Doc::GenerateGraph2(CClientDC* DCPoint)
+{
+		//图形数据准备，画一个正方形来显示旋转效果
+		group[0].x = 400; group[0].y = 400;
+		group[1].x = 500; group[1].y = 400;
+		group[2].x = 500; group[2].y = 500;
+		group[3].x = 400; group[3].y = 500;
+		group[4].x = 400; group[4].y = 400;
+		PointNum = 5;
+		DrawGraph(DCPoint);//画图形
+	
+}
+
+void CMy2022302131012Doc::SeedFill(CClientDC* pDC, CPoint seedpoint)
+{
+		int savex, xleft, xright, pflag, x, y;
+		std::stack<CPoint> stack_ptr; // 使用std::stack代替堆栈
+
+		pDC->SetROP2(R2_COPYPEN);
+		stack_ptr.push(seedpoint); // 将起始种子点推入栈中
+		while (!stack_ptr.empty()) // 使用std::stack的empty函数替代 num > 0
+		{
+			x = stack_ptr.top().x; y = stack_ptr.top().y;
+			stack_ptr.pop(); // 弹出栈顶元素
+			pDC->SetPixel(x, y, RGB(0, 0, 0));
+			savex = x; x++;
+			while (pDC->GetPixel(x, y) != m_crColor)
+			{
+				pDC->SetPixel(x++, y, m_crColor);
+			}
+			xright = x - 1; x = savex - 1;
+			while (pDC->GetPixel(x, y) != m_crColor)
+			{
+				pDC->SetPixel(x--, y, m_crColor);
+			}
+			xleft = x + 1; x = xleft; y++;
+			pflag = 1;
+			while (x < xright)
+			{
+				if (pDC->GetPixel(x, y) != m_crColor && pflag == 1)
+				{
+					stack_ptr.push(CPoint(x, y)); // 将未填充区域的像素点推入栈中
+					x++;
+				}
+				if (pDC->GetPixel(x, y) == m_crColor)
+					pflag = 1;
+				else
+					pflag = 0;
+				x++;
+			}
+			x = xleft; y -= 2; pflag = 1;
+			while (x < xright)
+			{
+				if (pDC->GetPixel(x, y) != m_crColor && pflag == 1)
+				{
+					stack_ptr.push(CPoint(x, y)); // 将未填充区域的像素点推入栈中
+					x++;
+				}
+				if (pDC->GetPixel(x, y) == m_crColor)
+					pflag = 1;
+				else
+					pflag = 0;
+				x++;
+			}
+		}
+	}
+
+void CMy2022302131012Doc::EdgeFill(CClientDC* pDC)
+{
+	int i, xr, x1, y1, x2, y2, y;
+	float m, x;
+	CPen pen;
+	pen.CreatePen(PS_SOLID, 1, m_crColor);//确定填充颜色，由该颜色与背景色异或混合而成
+	pDC->SetROP2(R2_XORPEN);//绘图方法为异或
+	CPen* pOldPen = pDC->SelectObject(&pen);
+	xr = 0;
+	for (i = 0; i < PointNum; i++) {//找出边界盒右边界参数
+		if (xr < group[i].x)xr = group[i].x;
+	}
+	for (i = 0; i < PointNum - 1; i++) {
+		x1 = group[i].x; x2 = group[i + 1].x;//取一条边
+		y1 = group[i].y; y2 = group[i + 1].y;
+		if (y1 != y2) {
+			if (y1 > y2) {//确保（x1,y1）为下端点
+				y = y1; y1 = y2; y2 = y;
+				y = x1; x1 = x2; x2 = y;
+			}
+			m = (float)(x2 - x1) / (float)(y2 - y1); x = x1;//m为相邻扫描线之间边的x增量
+			for (y = y1 + 1; y <= y2; y++) {
+				x += m;//确定边缘点
+				pDC->MoveTo((int)x, y);//从边缘点一直画到边界盒右端
+				pDC->LineTo(xr, y);
+			}
+		}
+	}
+	pDC->SelectObject(pOldPen);
+}
+
 
 
 

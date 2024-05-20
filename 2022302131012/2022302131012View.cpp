@@ -44,6 +44,14 @@ ON_COMMAND(ID_COLORSET, &CMy2022302131012View::OnColorset)
 ON_COMMAND(ID_strSet, &CMy2022302131012View::OnStrset)
 ON_COMMAND(ID_CURVE_BSAMPLE, &CMy2022302131012View::OnCurveBsample)
 ON_COMMAND(ID_CURVE_HERMITE, &CMy2022302131012View::OnCurveHermite)
+ON_COMMAND(ID_TRANS_MOVE, &CMy2022302131012View::OnTransMove)
+ON_COMMAND(ID_TRANS_SYMMETRY, &CMy2022302131012View::OnTransSymmetry)
+ON_COMMAND(ID_Clearall, &CMy2022302131012View::OnClearall)
+ON_COMMAND(ID_TRANS_ROTATE, &CMy2022302131012View::OnTransRotate)
+ON_COMMAND(ID_TRANS_ZOOM, &CMy2022302131012View::OnTransZoom)
+ON_COMMAND(ID_FILL_SEED, &CMy2022302131012View::OnFillSeed)
+ON_COMMAND(ID_FILL_EDGE, &CMy2022302131012View::OnFillEdge)
+ON_COMMAND(ID_FILL_SCANLINE, &CMy2022302131012View::OnFillScanline)
 END_MESSAGE_MAP()
 
 // CMy2022302131012View 构造/析构
@@ -213,7 +221,7 @@ void CMy2022302131012View::OnLButtonDown(UINT nFlags, CPoint point)
 		SetCapture(); PressNum = 1;
 	}
 
-	if (MenuID == 6|| MenuID==8 ||MenuID==10 && PressNum == 0) {//在控制点数组中，逐个寻找
+	if ((MenuID == 6|| MenuID==8 || MenuID==10) && PressNum == 0) {//在控制点数组中，逐个寻找
 		for (int i = 0; i < pDoc->PointNum; i++)
 		{
 			if ((point.x >= pDoc->group[i].x - 5) && (point.x <= pDoc->group[i].x + 5)
@@ -224,9 +232,156 @@ void CMy2022302131012View::OnLButtonDown(UINT nFlags, CPoint point)
 			}
 		}
 	}
-	CView::OnLButtonDown(nFlags, point);
-}
 
+	if (MenuID == 11) {//平移
+		ht.SetROP2(R2_NOT);//设置异或方式
+		if (PressNum == 0) {
+			PressNum++;
+			mPointOrign = point;
+			mPointOld = point;//记录第一点
+			SetCapture();
+		}
+		else if (PressNum == 1) { //根据两点间距计算平移量
+			for (int i = 0; i < pDoc->PointNum; i++)//根据平移量计算新图形坐标
+			{
+				pDoc->group[i].x += point.x - mPointOrign.x;
+				pDoc->group[i].y += point.y - mPointOrign.y;
+			}
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->DrawGraph(&ht);//生成新图形
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
+	if (MenuID == 12) {
+		//旋转
+		if (PressNum == 0) {
+			PressNum++;
+			mPointOrign = point;
+			mPointOld = point;//记录第一点
+			SetCapture();
+		}
+		else if (PressNum == 1) {//根据两点间距计算旋转角度‘
+			double dx = point.x - mPointOrign.x;
+			double dy = -(point.y - mPointOrign.y);
+			double k = dy / dx;
+			double a = 0;//旋转角
+
+			//根据直线的斜率确定旋转角，统一到顺时针旋转上
+			if (dx > 0 && dy > 0) {
+				a = 2 * pai - atan(k);//顺时针旋转a(锐角)，第一象限
+			}
+			else if (dx > 0 && dy < 0) {
+				a = atan(-k);//逆时针旋转a(锐角)，第四象限
+			}
+			else if (dx < 0 && dy>0) {
+				a = 2 * pai - (pai - atan(-k));//顺时针旋转a(钝角)，第二象限
+			}
+			else if (dx < 0 && dy < 0) {
+				a = pai - atan(k);//逆时针旋转a(钝角)，第三象限
+			}
+
+			//旋转公式为rotateX=cos(a)*sourceX+sin(a)*sourceY；rotateY=-sin(a)*sourceX+cos(a)*sourceY
+			for (int i = 0; i < pDoc->PointNum; i++) {
+				pDoc->rotatePoint(mPointOrign, pDoc->group[i], a);
+			}
+			ht.DPtoLP(&point);
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->DrawGraph(&ht);//生成新图形
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
+	if (MenuID == 13) {
+		//缩放
+		if (PressNum == 0) {
+			PressNum++;
+			mPointOrign = point;
+			mPointOld = point;//记录第一点
+			SetCapture();
+		}
+		else if (PressNum == 1) {//根据两点间距计算缩放量
+			int dx = point.x - mPointOrign.x;
+			int dy = point.y - mPointOrign.y;
+
+			//根据直线的斜率确定缩放比例，d>0为放大，d<0为缩小
+			//根据平移量计算新图形坐标
+			pDoc->group[0].x -= (dx / 2);
+			pDoc->group[0].y += (dy / 2);
+			pDoc->group[1].x += (dx / 2);
+			pDoc->group[1].y += (dy / 2);
+			pDoc->group[2].x += (dx / 2);
+			pDoc->group[2].y -= (dy / 2);
+			pDoc->group[3].x -= (dx / 2);
+			pDoc->group[3].y -= (dy / 2);
+			pDoc->group[4].x -= (dx / 2);
+			pDoc->group[4].y += (dy / 2);
+
+			ht.DPtoLP(&point);
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->DrawGraph(&ht);//生成新图形
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
+	if (MenuID == 15) {//对称变换
+		if (PressNum == 0) {
+			PressNum++;
+			mPointOrign = point;
+			mPointOld = point;//记录第一点
+			SetCapture();
+		}
+		else if (PressNum == 1) {
+			pDoc->Symmetry(mPointOrign, point);//进行对称变换
+			pDoc->DrawGraph(&ht);//生成新图形
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
+	if (MenuID == 20) {//种子填充:画边界
+		if (PressNum == 0) {
+			mPointOrign = point;
+			mPointOld = point;
+			mPointOld1 = point;//记录第一点
+			PressNum++;
+			SetCapture();
+		}
+		else {
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->group[0] = mPointOrign;//借助DDA直线函数画边界
+			pDoc->group[1]=point;
+			pDoc->DDALine(&ht);
+			mPointOrign = point;
+			mPointOld = point;
+			PressNum++;
+		}
+	}
+	if (MenuID == 21) {//确定种子点，填充
+		pDoc->SeedFill(&ht, point);
+		PressNum = 0; MenuID = 20;//设置决定顶点操作方式
+	}
+
+	if (MenuID == 22|| MenuID==23) {//边缘填充选顶点,//种子填充算法
+		pDoc->group[PressNum++] = point;
+		pDoc->PointNum++;
+		mPointOrign = point;
+		mPointOld = point;
+		SetCapture();
+	}
+	CView::OnLButtonDown(nFlags, point);
+		
+	}
 
 void CMy2022302131012View::OnRButtonDown(UINT nFlags, CPoint point)
 {
@@ -259,6 +414,52 @@ void CMy2022302131012View::OnRButtonDown(UINT nFlags, CPoint point)
 	if (MenuID == 10 && PressNum == 1) {
 		PressNum = 0;
 	}
+	if (MenuID == 20 && PressNum > 0) {//种子填充
+		ht.SetROP2(R2_NOT);
+		ht.MoveTo(mPointOrign);//擦除橡皮筋
+		ht.LineTo(point);
+		pDoc->group[0] = mPointOld1;//封闭多边形
+		pDoc->group[1] = mPointOrign;
+		pDoc->DDALine(&ht);
+		PressNum = 0; MenuID = 21;//改变操作方式为种子点选取
+		ReleaseCapture();
+	}
+	if (MenuID == 22) {//边缘填充选点结束
+		ht.SetROP2(R2_NOT);
+		ht.MoveTo(mPointOrign);//擦除橡皮筋
+		ht.LineTo(point);
+		pDoc->group[PressNum] = pDoc->group[0];
+		pDoc->PointNum++;
+		ht.MoveTo(pDoc->group[PressNum - 1]);
+		ht.LineTo(pDoc->group[0]);
+		for (int i = 0; i < PressNum; i++) {
+			ht.LineTo(pDoc->group[i + 1]);
+		}
+		pDoc->EdgeFill(&ht);
+		PressNum = 0; pDoc->PointNum = 0;
+		ReleaseCapture();
+	}
+
+	if (MenuID == 23) {
+		ht.SetROP2(R2_NOT);
+		ht.MoveTo(mPointOrign);//擦除橡皮筋
+		ht.LineTo(point);
+		pDoc->group[PressNum] = pDoc->group[0];//封闭多边形
+		ht.MoveTo(pDoc->group[PressNum - 1]);//擦除
+		ht.LineTo(pDoc->group[0]);
+		for (int i = 0; i < PressNum; i++)//擦除
+			ht.LineTo(pDoc->group[i + 1]);
+		CPen pen(PS_SOLID, 1, RGB(255, 0, 0));//设置多边形边界颜色（即画笔）
+		CPen* pOldPen = ht.SelectObject(&pen);
+		CBrush brush(RGB(0, 255, 0)); //设置多边形填充颜色（即画刷）
+		CBrush* pOldBrush = ht.SelectObject(&brush);
+		ht.SetROP2(R2_COPYPEN); //设置直接画方式
+		ht.Polygon(pDoc->group, PressNum);//调用多边形扫描线填充函数
+		ht.SelectObject(pOldPen);//恢复系统的画笔、画刷颜色设置
+		ht.SelectObject(pOldBrush);
+		PressNum = 0; pDoc->PointNum = 0;//初始化参数，为下一次操作做准备
+		ReleaseCapture();
+	}
 	CView::OnRButtonDown(nFlags, point);
 }
 
@@ -280,7 +481,15 @@ void CMy2022302131012View::OnMouseMove(UINT nFlags, CPoint point)
 	m_wndStatusBar.SetPaneText(3, p1, TRUE); //在第3个区域显示y坐标
 
 	//以下是各个方法的橡皮筋技术实现
-	if (MenuID == 1 || MenuID == 2 && PressNum == 1) {
+	if ((MenuID == 1 || MenuID == 2 || MenuID==11 || MenuID==15 || MenuID==12 || MenuID==13) && PressNum ==1) {
+		if (mPointOld != point) {
+			pDC.MoveTo(mPointOrign); pDC.LineTo(mPointOld);//擦旧线
+			pDC.MoveTo(mPointOrign);
+			pDC.LineTo(point);//画新线
+			mPointOld = point;
+		}
+	}
+	if ((MenuID == 20|| MenuID==22||MenuID==23) && PressNum > 0 ) {
 		if (mPointOld != point) {
 			pDC.MoveTo(mPointOrign); pDC.LineTo(mPointOld);//擦旧线
 			pDC.MoveTo(mPointOrign);
@@ -289,7 +498,7 @@ void CMy2022302131012View::OnMouseMove(UINT nFlags, CPoint point)
 		}
 	}
 
-	if (MenuID == 3 || MenuID==4 && PressNum == 1) {
+	if ((MenuID == 3 || MenuID==4) && PressNum == 1) {
 		pDC.SelectStockObject(NULL_BRUSH);//画空心圆
 		if (mPointOld != point) {
 			r = (int)sqrt((mPointOrign.x - mPointOld.x) * (mPointOrign.x-mPointOld.x) + (mPointOrign.y - mPointOld.y) * (mPointOrign.y - mPointOld.y));
@@ -504,4 +713,83 @@ void CMy2022302131012View::OnCurveHermite()
 	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
 	pDoc->PointNum = 0;//初始化
 	PressNum = 0; MenuID = 9;
+}
+
+
+void CMy2022302131012View::OnTransMove()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->GenerateGraph(&pDC);//调用文档类函数在屏幕上生成图形
+	PressNum = 0; MenuID = 11;
+}
+
+
+void CMy2022302131012View::OnTransSymmetry()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->GenerateGraph(&pDC);
+	PressNum = 0; MenuID = 15;
+}
+
+
+void CMy2022302131012View::OnClearall()
+{
+	// TODO: 在此添加命令处理程序代码
+	// 清空绘制区域
+	CRect rectDlg;
+	GetClientRect(rectDlg);			// 获得窗体的大小
+	int pointWidth = rectDlg.Width();		// 获取窗体宽度
+	int pointHeight = rectDlg.Height();		// 获取窗体高度
+	RedrawWindow(CRect(0, 0, pointWidth, pointHeight));		// 重绘指定区域
+}
+
+
+void CMy2022302131012View::OnTransRotate()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->GenerateGraph2(&pDC);//调用文档类函数在屏幕上生成图形
+	PressNum = 0; MenuID = 12;
+}
+
+
+void CMy2022302131012View::OnTransZoom()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->GenerateGraph2(&pDC);//调用文档类函数在屏幕上生成图形
+	PressNum = 0; MenuID = 13;
+}
+
+
+void CMy2022302131012View::OnFillSeed()
+{
+	// TODO: 在此添加命令处理程序代码
+	PressNum = 0; MenuID = 20;
+}
+
+
+void CMy2022302131012View::OnFillEdge()
+{
+	// TODO: 在此添加命令处理程序代码
+	PressNum = 0; MenuID = 22;
+}
+
+
+void CMy2022302131012View::OnFillScanline()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	pDoc->PointNum = 0;//实际上不需要该变量，但为了借鉴边缘填充的部分功能，与边缘填充保持一致
+	PressNum = 0; MenuID = 23;
 }

@@ -1,0 +1,29 @@
+﻿  pch.cpp
+  2022302131012.cpp
+  2022302131012Doc.cpp
+  2022302131012View.cpp
+  MainFrm.cpp
+F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(157,16): error C2664: “BOOL CMFCStatusBar::SetPaneText(int,LPCTSTR,BOOL)”: 无法将参数 2 从“char [20]”转换为“LPCTSTR”
+  (编译源文件“/2022302131012View.cpp”)
+  F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(157,32):
+  指向的类型不相关; 转换需要 reinterpret_cast、C 样式强制转换或带圆括号的函数样式强制转换
+  F:\vs2022\VC\Tools\MSVC\14.39.33519\atlmfc\include\afxstatusbar.h(103,15):
+  参见“CMFCStatusBar::SetPaneText”的声明
+  F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(157,16):
+  尝试匹配参数列表“(int, char [20], int)”时
+  
+F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(159,16): error C2664: “BOOL CMFCStatusBar::SetPaneText(int,LPCTSTR,BOOL)”: 无法将参数 2 从“char [20]”转换为“LPCTSTR”
+  (编译源文件“/2022302131012View.cpp”)
+  F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(159,32):
+  指向的类型不相关; 转换需要 reinterpret_cast、C 样式强制转换或带圆括号的函数样式强制转换
+  F:\vs2022\VC\Tools\MSVC\14.39.33519\atlmfc\include\afxstatusbar.h(103,15):
+  参见“CMFCStatusBar::SetPaneText”的声明
+  F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(159,16):
+  尝试匹配参数列表“(int, char [20], int)”时
+  
+F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(156,2): error C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  (编译源文件“/2022302131012View.cpp”)
+  
+F:\计算机图形学实习\2022302131012\2022302131012\2022302131012View.cpp(158,2): error C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  (编译源文件“/2022302131012View.cpp”)
+  

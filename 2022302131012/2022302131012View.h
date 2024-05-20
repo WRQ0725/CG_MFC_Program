@@ -9,8 +9,9 @@ class CMy2022302131012View : public CView
 {
 protected: // 仅从序列化创建
 	int MenuID, PressNum,SaveNumber;
-	CPoint mPointOrign, mPointOld;
+	CPoint mPointOrign, mPointOld,mPointOld1;
 	int r;
+	double pai = 3.1415926;
 	CMy2022302131012View() noexcept;
 	DECLARE_DYNCREATE(CMy2022302131012View)
 // 特性
@@ -61,6 +62,14 @@ public:
 	afx_msg void OnStrset();
 	afx_msg void OnCurveBsample();
 	afx_msg void OnCurveHermite();
+	afx_msg void OnTransMove();
+	afx_msg void OnTransSymmetry();
+	afx_msg void OnClearall();
+	afx_msg void OnTransRotate();
+	afx_msg void OnTransZoom();
+	afx_msg void OnFillSeed();
+	afx_msg void OnFillEdge();
+	afx_msg void OnFillScanline();
 };
 
 #ifndef _DEBUG  // 2022302131012View.cpp 中的调试版本
