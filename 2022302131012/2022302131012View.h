@@ -3,11 +3,13 @@
 //
 
 #pragma once
-
+#include "CReality.h"
+#include"CObject3D.h"
 
 class CMy2022302131012View : public CView
 {
 protected: // 仅从序列化创建
+	CReality m_Reality;//光照模型中的场景类实例，包含创建景物、光源，光照模型等系列参数和方法
 	int MenuID, PressNum,SaveNumber;
 	CPoint mPointOrign, mPointOld,mPointOld1;
 	int r;
@@ -17,7 +19,6 @@ protected: // 仅从序列化创建
 // 特性
 public:
 	CMy2022302131012Doc* GetDocument() const;
-
 // 操作
 public:
 
@@ -70,6 +71,14 @@ public:
 	afx_msg void OnFillSeed();
 	afx_msg void OnFillEdge();
 	afx_msg void OnFillScanline();
+	afx_msg void OnCutCs();
+	afx_msg void OnCutPolygon();
+	afx_msg void OnCutcircle();
+	afx_msg void OnCutMiddle();
+	afx_msg void OnCutLiang();
+	afx_msg void OnLightlambert();
+	afx_msg void Onlightphong();
+	afx_msg void OnLightmuti();
 };
 
 #ifndef _DEBUG  // 2022302131012View.cpp 中的调试版本

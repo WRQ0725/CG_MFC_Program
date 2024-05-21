@@ -42,6 +42,12 @@
     <ClInclude Include="SetCharDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CObject3D.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CReality.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="2022302131012.cpp">
@@ -60,6 +66,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="SetCharDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CObject3D.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CReality.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

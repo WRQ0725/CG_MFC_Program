@@ -23,6 +23,8 @@ public:
 	void MidLine(CClientDC* DCPoint);
 	void midline(CClientDC* DCPoint, int flag, int x0, int y0, int x1, int y1);
 	void BCircle(CClientDC* DCPoint, CPoint p1, CPoint p2);
+	void BCircle(CClientDC* DCPoint, CRect* rc, CPoint p1, CPoint p2);
+	void BCircle_clean(CClientDC* DCPoint, CPoint mPointOrign, CPoint point);//圆的裁剪的橡皮筋消除
 	void PNCircle(CClientDC* DCPoint, CPoint p1, CPoint p2);
 	void Bezier(CClientDC* DCPoint, int mode);
 	void Bezier_4(CClientDC* DCPoint, int mode, CPoint p1, CPoint p2, CPoint p3, CPoint p4);
@@ -36,6 +38,15 @@ public:
 	void GenerateGraph2(CClientDC* DCPoint);
 	void SeedFill(CClientDC* pDC, CPoint seedpoint);
 	void EdgeFill(CClientDC* pDC);
+	void DrawWindow(CClientDC* pDC);
+	void CohenSutherland(CClientDC* pDC, CPoint p1, CPoint p2);
+	int encode(int x, int y);
+	void PolygonCut(CClientDC* pDC);
+	void EdgeClipping(int linecode);
+	void CircleCut(CClientDC* DCPoint, CPoint p1, CPoint p2);
+	void Cutmiddle(CClientDC* pDC, CPoint p1, CPoint p2);
+	int clipTest(float p, float q, float* u1, float* u2);
+	void cutLBarsky(CClientDC* pDC, CPoint p1, CPoint p2);
 // 重写
 public:
 	virtual BOOL OnNewDocument();

@@ -12,6 +12,8 @@
 
 #include "2022302131012Doc.h"
 #include "2022302131012View.h"
+#include "CReality.h"
+#include"CObject3D.h"
 #include "SetCharDlg.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -52,6 +54,14 @@ ON_COMMAND(ID_TRANS_ZOOM, &CMy2022302131012View::OnTransZoom)
 ON_COMMAND(ID_FILL_SEED, &CMy2022302131012View::OnFillSeed)
 ON_COMMAND(ID_FILL_EDGE, &CMy2022302131012View::OnFillEdge)
 ON_COMMAND(ID_FILL_SCANLINE, &CMy2022302131012View::OnFillScanline)
+ON_COMMAND(ID_CUT_CS, &CMy2022302131012View::OnCutCs)
+ON_COMMAND(ID_CUT_POLYGON, &CMy2022302131012View::OnCutPolygon)
+ON_COMMAND(ID_CutCircle, &CMy2022302131012View::OnCutcircle)
+ON_COMMAND(ID_CUT_MIDDLE, &CMy2022302131012View::OnCutMiddle)
+ON_COMMAND(ID_CUT_LIANG, &CMy2022302131012View::OnCutLiang)
+ON_COMMAND(ID_LightLambert, &CMy2022302131012View::OnLightlambert)
+ON_COMMAND(ID_OnLightPhong, &CMy2022302131012View::Onlightphong)
+ON_COMMAND(ID_LightMuti, &CMy2022302131012View::OnLightmuti)
 END_MESSAGE_MAP()
 
 // CMy2022302131012View 构造/析构
@@ -185,7 +195,7 @@ void CMy2022302131012View::OnLButtonDown(UINT nFlags, CPoint point)
 		}
 	}
 
-	if (MenuID == 3) {//Bresenham圆
+	if (MenuID == 3||MenuID==33) {//Bresenham圆，圆的裁剪借鉴该画圆函数
 		if (PressNum == 0) {//第一次按键将第一点保留在mPointOrign
 			pDoc->group[PressNum] = point;
 			PressNum++;
@@ -193,9 +203,18 @@ void CMy2022302131012View::OnLButtonDown(UINT nFlags, CPoint point)
 			mPointOld = point;//记录第一点
 			SetCapture();
 		}
-		else if (PressNum == 1) {//第二次按键调用文档类画圆程序画图
+		else if (PressNum == 1&& MenuID==3) {//第二次按键调用文档类画圆程序画图
 			PressNum = 0;
 			pDoc->BCircle(&ht, mPointOrign, point); ReleaseCapture();
+		}
+		else if (PressNum == 1 && MenuID == 33)//圆裁剪,第二次按键擦除橡皮筋圆，只保留窗口内图形
+		{
+			pDoc->group[PressNum] = point;
+			PressNum = 0;
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			pDoc->BCircle_clean(&ht, mPointOrign, point);
+			pDoc->CircleCut(&ht, mPointOrign, point);
+			ReleaseCapture();
 		}
 	}
 
@@ -372,13 +391,65 @@ void CMy2022302131012View::OnLButtonDown(UINT nFlags, CPoint point)
 		PressNum = 0; MenuID = 20;//设置决定顶点操作方式
 	}
 
-	if (MenuID == 22|| MenuID==23) {//边缘填充选顶点,//种子填充算法
+	if (MenuID == 22|| MenuID==23||MenuID==25) {//边缘填充选顶点,//种子填充算法//多边形裁剪选点
 		pDoc->group[PressNum++] = point;
 		pDoc->PointNum++;
 		mPointOrign = point;
 		mPointOld = point;
 		SetCapture();
 	}
+
+	if (MenuID == 24) {//Cohen-sutherland裁剪算法
+		if (PressNum == 0) {
+			mPointOrign = point;
+			mPointOld = point;
+			PressNum++;
+			SetCapture();
+		}
+		else
+		{
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->CohenSutherland(&ht, mPointOrign, point);
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+	if (MenuID == 40) {//中点裁剪算法
+		if (PressNum == 0) {
+			mPointOrign = point;
+			mPointOld = point;
+			PressNum++;
+			SetCapture();
+		}
+		else {
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->Cutmiddle(&ht, mPointOrign, point);
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
+	if (MenuID == 41) {//梁友栋-Barsky 算法
+		if (PressNum == 0) {
+			mPointOrign = point;
+			mPointOld = point;
+			PressNum++;
+			SetCapture();
+		}
+		else {
+			ht.SetROP2(R2_NOT);
+			ht.MoveTo(mPointOrign);//擦除橡皮筋
+			ht.LineTo(point);
+			pDoc->cutLBarsky(&ht, mPointOrign, point);
+			ReleaseCapture();
+			PressNum = 0;
+		}
+	}
+
 	CView::OnLButtonDown(nFlags, point);
 		
 	}
@@ -460,6 +531,21 @@ void CMy2022302131012View::OnRButtonDown(UINT nFlags, CPoint point)
 		PressNum = 0; pDoc->PointNum = 0;//初始化参数，为下一次操作做准备
 		ReleaseCapture();
 	}
+	if (MenuID == 25) {//多边形裁剪
+		ht.SetROP2(R2_NOT);
+		ht.MoveTo(mPointOrign);//擦除橡皮筋
+		ht.LineTo(point);
+		pDoc->group[PressNum] = pDoc->group[0];//封闭多边形
+		ht.MoveTo(pDoc->group[PressNum - 1]);//擦除
+		ht.LineTo(pDoc->group[0]);
+		for (int i = 0; i < PressNum; i++)//擦除
+			ht.LineTo(pDoc->group[i + 1]);
+		pDoc->PointNum = PressNum; //记录顶点数量
+		pDoc->PolygonCut(&ht);
+		PressNum = 0;
+		pDoc->PointNum = 0;
+		ReleaseCapture();
+	}
 	CView::OnRButtonDown(nFlags, point);
 }
 
@@ -489,7 +575,7 @@ void CMy2022302131012View::OnMouseMove(UINT nFlags, CPoint point)
 			mPointOld = point;
 		}
 	}
-	if ((MenuID == 20|| MenuID==22||MenuID==23) && PressNum > 0 ) {
+	if ((MenuID == 20|| MenuID==22||MenuID==23||MenuID==24||MenuID==25||MenuID==40||MenuID==41) && PressNum > 0 ) {
 		if (mPointOld != point) {
 			pDC.MoveTo(mPointOrign); pDC.LineTo(mPointOld);//擦旧线
 			pDC.MoveTo(mPointOrign);
@@ -498,7 +584,7 @@ void CMy2022302131012View::OnMouseMove(UINT nFlags, CPoint point)
 		}
 	}
 
-	if ((MenuID == 3 || MenuID==4) && PressNum == 1) {
+	if ((MenuID == 3 || MenuID==4||MenuID==33) && PressNum == 1) {
 		pDC.SelectStockObject(NULL_BRUSH);//画空心圆
 		if (mPointOld != point) {
 			r = (int)sqrt((mPointOrign.x - mPointOld.x) * (mPointOrign.x-mPointOld.x) + (mPointOrign.y - mPointOld.y) * (mPointOrign.y - mPointOld.y));
@@ -792,4 +878,148 @@ void CMy2022302131012View::OnFillScanline()
 	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
 	pDoc->PointNum = 0;//实际上不需要该变量，但为了借鉴边缘填充的部分功能，与边缘填充保持一致
 	PressNum = 0; MenuID = 23;
+}
+
+
+void CMy2022302131012View::OnCutCs()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->DrawWindow(&pDC);
+	PressNum = 0; MenuID = 24;
+}
+
+
+void CMy2022302131012View::OnCutPolygon()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->DrawWindow(&pDC);
+	PressNum = 0; MenuID = 25;
+}
+
+
+void CMy2022302131012View::OnCutcircle()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->DrawWindow(&pDC);
+	PressNum = 0; MenuID = 33;
+}
+
+
+void CMy2022302131012View::OnCutMiddle()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->DrawWindow(&pDC);
+	PressNum = 0; MenuID = 40;
+}
+
+
+void CMy2022302131012View::OnCutLiang()
+{
+	// TODO: 在此添加命令处理程序代码
+	CMy2022302131012Doc* pDoc = GetDocument();//获得文档类指针
+	CClientDC pDC(this);
+	OnPrepareDC(&pDC);
+	pDoc->DrawWindow(&pDC);
+	PressNum = 0; MenuID = 41;
+}
+
+
+void CMy2022302131012View::OnLightlambert()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Reality.Clear();//清除原有的景物和光源
+	CObject3D* m_ball = new CObject3D();//构造新的景物
+	m_ball->CreateBall(300, 500, 300, 200);//创建一个球体
+	Param param;//构造景物参数
+	param.kra = 0.5; param.kga = 0.5; param.kba = 0.5;
+	param.krd = 0.8; param.kgd = 0.8; param.kbd = 0.8;
+	m_ball->SetParam(param);
+	m_Reality.AddObject3D(m_ball);//添加景物
+
+	LightParam light;//构造光源
+	light.c1 = 0.25; light.c2 = 0.01; light.c3 = 0.0001;
+	light.m_distance = 30;
+	light.irl = 255; light.igl = 255; light.ibl = 255;
+	light.xn = 0; light.yn = 0.5; light.zn = 0.5;
+	m_Reality.AddLight(light);//添加光源
+
+	m_Reality.SetIA(100, 100, 100);//设置泛光强度
+	//使用Lambert漫反射光照模型进行绘制
+	m_Reality.Lambert(this->GetDC());
+	delete m_ball;
+}
+
+
+void CMy2022302131012View::Onlightphong()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Reality.Clear();//清除原有的景物和光源
+	CObject3D* m_ball = new CObject3D();//构造新的景物
+	m_ball->CreateBall(300, 500, 300, 200);//创建球体
+	Param param;//景物光照参数
+	param.kra = 0.5; param.kga = 0.5; param.kba = 0.5;
+	param.krd = 0.8; param.kgd = 0.8; param.kbd = 0.8;
+	param.krs = 0.3; param.kgs = 0.3; param.kbs = 0.3;
+	param.n = 10;
+	m_ball->SetParam(param);
+	m_Reality.AddObject3D(m_ball);//添加景物
+
+	LightParam light;//光源
+	light.c1 = 0.25; light.c2 = 0.01; light.c3 = 0.0001;
+	light.m_distance = 30;
+	light.irl = 255; light.igl = 255; light.ibl = 255;
+	light.xn = 0; light.yn = 0.5; light.zn = 0.5;
+	m_Reality.AddLight(light);//添加光源
+
+	m_Reality.SetIA(100, 100, 100);//设置泛光强度
+	//使用Phong局部光照模型进行绘制
+	m_Reality.PhongScan(this->GetDC());
+	delete m_ball;
+}
+
+
+void CMy2022302131012View::OnLightmuti()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Reality.Clear();//清除原有的景物和光源
+	CObject3D* m_ball = new CObject3D();//构造新的景物
+	m_ball->CreateBall(300, 500, 300, 200);//创建球体
+	Param param;//景物光照参数
+	param.kra = 0.5; param.kga = 0.5; param.kba = 0.5;
+	param.krd = 0.8; param.kgd = 0.8; param.kbd = 0.8;
+	param.krs = 0.3; param.kgs = 0.3; param.kbs = 0.3;
+	param.n = 10;
+	m_ball->SetParam(param);
+	m_Reality.AddObject3D(m_ball);//添加景物
+
+	LightParam light;//光源1
+	light.c1 = 0.25; light.c2 = 0.01; light.c3 = 0.0001;
+	light.m_distance = 30;
+	light.irl = 255; light.igl = 255; light.ibl = 255;
+	light.xn = 0; light.yn = 0.5; light.zn = 0.5;
+	m_Reality.AddLight(light);//添加光源1
+
+	LightParam light2;//光源2
+	light2.c1 = 0.25; light2.c2 = 0.01; light2.c3 = 0.0001;
+	light2.m_distance = 30;
+	light2.irl = 0; light2.igl = 255; light2.ibl = 0;
+	light2.xn = -1; light2.yn = -0.5; light2.zn = 0.5;
+	m_Reality.AddLight(light2);//添加光源2
+
+	m_Reality.SetIA(100, 100, 100);//设置泛光强度
+	//使用Phong局部光照模型进行绘制
+	m_Reality.PhongScan(this->GetDC());
+	delete m_ball;
 }

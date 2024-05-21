@@ -186,6 +186,8 @@
     <ClInclude Include="2022302131012.h" />
     <ClInclude Include="2022302131012Doc.h" />
     <ClInclude Include="2022302131012View.h" />
+    <ClInclude Include="CObject3D.h" />
+    <ClInclude Include="CReality.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="pch.h" />
@@ -197,6 +199,8 @@
     <ClCompile Include="2022302131012.cpp" />
     <ClCompile Include="2022302131012Doc.cpp" />
     <ClCompile Include="2022302131012View.cpp" />
+    <ClCompile Include="CObject3D.cpp" />
+    <ClCompile Include="CReality.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
